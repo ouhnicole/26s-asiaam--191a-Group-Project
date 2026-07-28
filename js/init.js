@@ -87,5 +87,5 @@ function addMarker(data){
         .setPopup(new maplibregl.Popup()
             .setHTML(popup_message))
         .addTo(map)
-    createButtons(lat,lng,data['Where did you get vaccinated?']);
+    createButtons(lat,lng,data['Why or why not?']);
 }
