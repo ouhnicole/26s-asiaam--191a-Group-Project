@@ -85,4 +85,17 @@ function processData(results){
     });
 };
 
+document.addEventListener('DOMContentLoaded', function() {
+    const surveyButton = document.getElementById('survey-toggle');
+    const surveyPanel = document.getElementById('survey-panel');
+
+    if (surveyButton && surveyPanel) {
+        surveyButton.addEventListener('click', function() {
+            const isOpen = surveyPanel.style.display === 'block';
+            surveyPanel.style.display = isOpen ? 'none' : 'block';
+            surveyButton.textContent = isOpen ? 'Open Survey' : 'Close Survey';
+        });
+    }
+});
+
 
