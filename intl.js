@@ -45,6 +45,7 @@ map.on('load', function() {
            console.log(results)
         }
     });
+//commit
 
 fetch('testimonies.geojson').then(
     response => response.json()
