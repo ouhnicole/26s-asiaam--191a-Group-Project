@@ -3,7 +3,7 @@ let mapOptions = {'centerLngLat': [-118.444,34.0709],'startingZoomLevel':5}
 
 const map = new maplibregl.Map({
     container: 'map', // container ID
-    style: 'https://api.maptiler.com/maps/streets-v2-light/style.json?key=wsyYBQjqRwKnNsZrtci1', // Your style URL
+    style: 'https://api.maptiler.com/maps/019f8898-9cac-7f48-9d2a-5166d13bc591/style.json?key=domjvUPbX2qSlWXv88Xn', // Your style URL
     center: mapOptions.centerLngLat, // Starting position [lng, lat]
     zoom: mapOptions.startingZoomLevel // Starting zoom level
 });

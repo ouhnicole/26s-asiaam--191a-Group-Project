@@ -3,7 +3,7 @@ let mapOptions = {'centerLngLat': [-118.444,34.0709],'startingZoomLevel':5}
 
 const map = new maplibregl.Map({
     container: 'map', // container ID
-    style: 'https://api.maptiler.com/maps/streets-v2-light/style.json?key=wsyYBQjqRwKnNsZrtci1', // Your style URL
+    style: 'https://api.maptiler.com/maps/019f8898-9cac-7f48-9d2a-5166d13bc591/style.json?key=domjvUPbX2qSlWXv88Xn', // Your style URL
     center: mapOptions.centerLngLat, // Starting position [lng, lat]
     zoom: mapOptions.startingZoomLevel // Starting zoom level
 });
@@ -31,61 +31,67 @@ map.on('load', function() {
         complete: function(results) {
             // Process the parsed data
            console.log(results)
+           processData(results)
         }
     });
+});
 //commit
 
-fetch('testimonies.geojson').then(
-    response => response.json()
-).then(
-    data => {
-        map.addSource('places', {
-            'type': 'geojson',
-            'data': data
-        });
-        map.addLayer({
-            'id': 'places',
-            'type': 'circle',
-            'source': 'places',
-            'paint': {
-                'circle-color': '#4264fb',
-                'circle-radius': 6,
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-            }
-        });
-    }
-);
+// fetch('testimonies.geojson').then(
+//     response => response.json()
+// ).then(
+//     data => {
+//         map.addSource('places', {
+//             'type': 'geojson',
+//             'data': data
+//         });
+//         map.addLayer({
+//             'id': 'places',
+//             'type': 'circle',
+//             'source': 'places',
+//             'paint': {
+//                 'circle-color': '#4264fb',
+//                 'circle-radius': 6,
+//                 'circle-stroke-width': 2,
+//                 'circle-stroke-color': '#ffffff'
+//             }
+//         });
+//     }
+// );
 
-});
+// });
 
 function processData(results){
     //console.log(results) //for debugging: this can help us see if the results are what we want
-    results.features.forEach(feature => {
-        //console.log(feature) // for debugging: are we seeing each feature correctly?
-        // assumes your geojson has a "title" and "message" attribute
-        let coordinates = feature.geometry.coordinates;
-        let longitude = coordinates[0];
-        let latitude = coordinates[1];
-        let title = feature.properties.title;
-        let message = feature.properties.message;
-        addMarker(latitude,longitude,title,message);
+    console.log(results)
+    results.data.forEach(feature => {
+        if (feature.lng != 0){
+            console.log(feature.lng) // for debugging: are we seeing each feature correctly?
+            // assumes your geojson has a "title" and "message" attribute
+
+            let longitude = feature.lng;
+            let latitude = feature.lat;
+            let title = feature["Where's your hometown located? (City, State)"];
+            let opinion = feature['Do you think UCLA has provided enough resources for students having experienced deportations?'];
+            addMarker(latitude,longitude,title,opinion);
+        }
+
     });
 };
-function addMarker(data){
+function addMarker(latitude,longitude,title,opinion){
     let popup_message;
-    let lng = data['lng'];
-    let lat = data['lat'];
-    if (data['Do you think UCLA has provided enough resources for students having experienced deportations?'] == "Yes"){
-        popup_message = `<h2>Students who think UCLA has provided enough resources</h2>`
+
+    
+    if (opinion == "Yes"){
+        popup_message = `<h2>Student who thinks UCLA has provided enough resources</h2>`
     }
     else{
-        popup_message = `<h2>Students who think UCLA has not provided enough resources</h2>`
+        popup_message = `<h2>Student who thinks UCLA has not provided enough resources</h2>`
     }
     new maplibregl.Marker()
-        .setLngLat([lng, lat])
+        .setLngLat([longitude, latitude])
         .setPopup(new maplibregl.Popup()
             .setHTML(popup_message))
         .addTo(map)
-    createButtons(lat,lng,data['Why or why not?']);
+    createButtons(latitude,longitude,opinion);
 }
