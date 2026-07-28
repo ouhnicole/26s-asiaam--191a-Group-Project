@@ -1,0 +1,19 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "place": "home",
+                "color": "pink"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -119.391441,
+                    34.560671
+                ]
+            }
+        }
+    ]
+}
