@@ -162,26 +162,57 @@ function addLegend() {
 }
 
 function createInfoPanel(){
-    const summaryPanel = document.getElementById('state-summary');
-    let info = document.getElementById('info-panel');
-    if (!info){
-        info = document.createElement('div');
-        info.id = 'info-panel';
-        info.className = 'card';
-        info.style.minHeight = '140px';
-        info.style.marginBottom = '1rem';
-        info.innerHTML = '<strong>State details</strong><p>Map shows percent of responses saying UCLA provided enough resources. Click a state to read anonymized stories.</p>';
-        if (summaryPanel) {
-            summaryPanel.insertBefore(info, summaryPanel.firstChild);
-        }
-    }
-    return info;
+    return document.getElementById('state-detail-overlay');
+}
+
+function showSurveySummary(){
+    const overlay = document.getElementById('state-detail-overlay');
+    const title = document.getElementById('state-detail-title');
+    const summary = document.getElementById('state-detail-summary');
+    const filterSelect = document.getElementById('state-filter');
+    const slidesContainer = document.getElementById('state-detail-slides');
+    const dotsContainer = document.getElementById('state-detail-dots');
+    const countLabel = document.getElementById('state-slide-count');
+    const prevButton = document.getElementById('prev-story');
+    const nextButton = document.getElementById('next-story');
+
+    if (!overlay || !slidesContainer || !title || !summary || !filterSelect || !countLabel) return;
+    overlay.hidden = false;
+    overlay.classList.add('open');
+
+    const totalStates = Object.keys(stateGroups).length;
+    const totalResponses = Object.values(stateGroups).reduce((sum, group) => sum + group.entries.length, 0);
+    const yesCount = Object.values(stateGroups).reduce((sum, group) => sum + group.yes, 0);
+    const noCount = Object.values(stateGroups).reduce((sum, group) => sum + group.no, 0);
+
+    const yesPercent = totalResponses ? Math.round((yesCount / totalResponses) * 100) : 0;
+    const noPercent = totalResponses ? Math.round((noCount / totalResponses) * 100) : 0;
+
+    title.textContent = 'Survey summary';
+    summary.textContent = `${totalResponses} survey responses came from ${totalStates} states. ${yesCount} answered “Yes” (${yesPercent}%) and ${noCount} answered “No” (${noPercent}%).`;
+    filterSelect.innerHTML = '<option>All</option>';
+    filterSelect.disabled = true;
+
+    slidesContainer.innerHTML = `
+        <div class="slick-slide">
+            <div class="slide-card">
+                <strong>Survey overview</strong>
+                <p><strong>States with responses:</strong> ${totalStates}</p>
+                <p><strong>Total survey responses:</strong> ${totalResponses}</p>
+                <p><strong>Answered “Yes”:</strong> ${yesCount} (${yesPercent}%)</p>
+                <p><strong>Answered “No”:</strong> ${noCount} (${noPercent}%)</p>
+                <p style="margin-top:1rem;color:#555;">Click a state on the map to view that state&apos;s responses.</p>
+            </div>
+        </div>`;
+    dotsContainer.innerHTML = '';
+    countLabel.textContent = 'Summary';
+    if (prevButton) prevButton.disabled = true;
+    if (nextButton) nextButton.disabled = true;
 }
 
 function renderStateSummary(groups){
     const summaryPanel = document.getElementById('state-summary');
     summaryPanel.innerHTML = '<h2>Survey summary</h2><div id="summary-cards" class="summary-cards"></div>';
-    const info = createInfoPanel();
     const cardsContainer = document.getElementById('summary-cards');
     Object.entries(groups)
         .sort(([,a],[,b]) => b.entries.length - a.entries.length)
@@ -206,7 +237,6 @@ function renderStateSummary(groups){
                 <small>${category}</small>
             `;
             card.addEventListener('click', function(){
-                showStateDetails(state, group, info);
                 highlightState(state);
             });
             cardsContainer.appendChild(card);
@@ -214,7 +244,10 @@ function renderStateSummary(groups){
 }
 
 function showStateDetails(state, group, info){
-    // build a simple UI to step through stories and filter by affected type
+    if (!info) return;
+    info.hidden = false;
+    info.style.opacity = '1';
+    // build a slide deck for state responses
     const allEntries = group.entries.slice();
     const affectedTypes = Array.from(new Set(allEntries.map(e => (e.affected || 'Unknown').trim()))).sort();
     let filter = 'All';
@@ -225,59 +258,93 @@ function showStateDetails(state, group, info){
         return allEntries.filter(e => ((e.affected||'').trim()) === filter);
     }
 
-    function renderEntry(idx){
-        const list = getFiltered();
+    function buildSlides(list){
         if (list.length === 0) {
-            return `<p>No stories match this filter.</p>`;
+            return `<div class="slick-slide"><div class="slide-card"><p>No survey responses are available for this state.</p></div></div>`;
         }
-        const entry = list[idx];
-        return `
-            <div style="margin-top:.5rem;padding:.5rem;border-radius:6px;background:#fff;border:1px solid rgba(0,0,0,.06);">
-                <strong>${entry.title || 'Unknown location'}</strong>
-                <p style="margin:.25rem 0;"> <strong>Who was affected?</strong> ${entry.affected || '—'}</p>
-                <p style="margin:.25rem 0;"> <strong>Response</strong> ${entry.opinion || '—'}</p>
-                <p style="margin:.25rem 0;"> <strong>Why or why not?</strong> ${entry.testimony || '—'}</p>
+        return list.map((entry) => `
+            <div class="slick-slide">
+                <div class="slide-card">
+                    <strong>${entry.title || 'Unknown location'}</strong>
+                    <p><strong>Who was affected?</strong> ${entry.affected || '—'}</p>
+                    <p><strong>Response</strong> ${entry.opinion || '—'}</p>
+                    <p><strong>Why or why not?</strong> ${entry.testimony || '—'}</p>
+                </div>
             </div>
-        `;
+        `).join('');
+    }
+
+    function hasData(){
+        return group && Array.isArray(group.entries) && group.entries.length > 0;
+    }
+
+    function renderDots(total){
+        return Array.from({length: total}, (_, idx) => `
+            <button type="button" class="slick-dot${idx === index ? ' active' : ''}" data-index="${idx}" aria-label="Go to story ${idx + 1}"></button>
+        `).join('');
     }
 
     function updatePanel(){
         const list = getFiltered();
         const total = list.length;
-        if (index >= total) index = Math.max(0, total-1);
-        const pager = total > 0 ? `<div style="font-size:13px;margin-top:6px;">${index+1} of ${total}</div>` : '';
-        const entryHtml = total > 0 ? renderEntry(index) : '<p>No stories for selected filter.</p>';
-        info.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-                <div>
-                    <strong>${state}</strong>
-                    <div style="font-size:13px;color:#333;margin-top:4px;">${group.entries.length} total response${group.entries.length===1?'':'s'} — ${group.yes} Yes • ${group.no} No</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="font-size:13px;">Filter:</label>
-                    <select id="state-filter" style="padding:6px;border-radius:6px;border:1px solid #ddd;background:#fff;">
-                        <option>All</option>
-                        ${affectedTypes.map(a => `<option>${a}</option>`).join('')}
-                    </select>
-                </div>
-            </div>
-            ${entryHtml}
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                <div>
-                    <button id="prev-story" style="padding:6px 10px;margin-right:6px;border-radius:6px;border:1px solid #ddd;background:#fff;">Prev</button>
-                    <button id="next-story" style="padding:6px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;">Next</button>
-                </div>
-                ${pager}
-            </div>
-        `;
+        if (index >= total) index = Math.max(0, total - 1);
 
-        // attach handlers
-        const prev = document.getElementById('prev-story');
-        const next = document.getElementById('next-story');
-        const sel = document.getElementById('state-filter');
-        if (prev) prev.onclick = () => { index = Math.max(0, index-1); updatePanel(); };
-        if (next) next.onclick = () => { const total = getFiltered().length; index = Math.min(total-1, index+1); updatePanel(); };
-        if (sel) sel.onchange = (e) => { filter = e.target.value; index = 0; updatePanel(); };
+        const overlay = document.getElementById('state-detail-overlay');
+        const title = document.getElementById('state-detail-title');
+        const summary = document.getElementById('state-detail-summary');
+        const filterSelect = document.getElementById('state-filter');
+        const slidesContainer = document.getElementById('state-detail-slides');
+        const prevButton = document.getElementById('prev-story');
+        const nextButton = document.getElementById('next-story');
+        const countLabel = document.getElementById('state-slide-count');
+        const dotsContainer = document.getElementById('state-detail-dots');
+        const closeButton = document.getElementById('close-map-overlay');
+
+        if (overlay) {
+            overlay.hidden = false;
+            overlay.classList.add('open');
+        }
+        if (title) title.textContent = state;
+        if (summary) summary.textContent = `${group.entries.length} total response${group.entries.length === 1 ? '' : 's'} — ${group.yes} Yes • ${group.no} No`;
+        if (slidesContainer) slidesContainer.style.minHeight = '180px';
+        if (slidesContainer) slidesContainer.innerHTML = buildSlides(list);
+        if (dotsContainer) dotsContainer.innerHTML = total > 1 ? renderDots(total) : '';
+        if (countLabel) countLabel.textContent = total > 0 ? `Story ${index + 1} of ${total}` : 'No stories available';
+
+        if (prevButton) {
+            prevButton.disabled = total <= 1;
+            prevButton.onclick = () => { if (total > 0) { index = (index - 1 + total) % total; updatePanel(); } };
+        }
+        if (nextButton) {
+            nextButton.disabled = total <= 1;
+            nextButton.onclick = () => { if (total > 0) { index = (index + 1) % total; updatePanel(); } };
+        }
+
+        if (filterSelect) {
+            filterSelect.innerHTML = '<option>All</option>' + affectedTypes.map(a => `<option>${a}</option>`).join('');
+            filterSelect.value = filter;
+            filterSelect.onchange = (e) => { filter = e.target.value; index = 0; updatePanel(); };
+        }
+
+        const track = slidesContainer;
+        if (track) {
+            track.style.transform = `translateX(-${index * 100}%)`;
+        }
+
+        if (dotsContainer) {
+            dotsContainer.querySelectorAll('.slick-dot').forEach((button) => {
+                button.onclick = () => {
+                    index = Number(button.dataset.index);
+                    updatePanel();
+                };
+            });
+        }
+
+        if (closeButton) {
+            closeButton.onclick = () => {
+                if (overlay) overlay.hidden = true;
+            };
+        }
     }
 
     updatePanel();
@@ -375,6 +442,7 @@ function processData(results){
         fitMapToDataBounds(updated);
     }
     renderStateSummary(stateGroups);
+    showSurveySummary();
 }
 
 function fitMapToDataBounds(geojson) {

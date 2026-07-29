@@ -105,6 +105,30 @@
                 <div class="card map-card">
                     <h2>Explore the map</h2>
                     <div id="map"></div>
+                    <div id="state-detail-overlay" class="map-overlay" hidden aria-live="polite">
+                        <button id="close-map-overlay" class="map-overlay-close" type="button" aria-label="Close story viewer">×</button>
+                        <div id="state-detail-header" class="map-overlay-header">
+                            <div>
+                                <h2 id="state-detail-title">Select a state</h2>
+                                <div id="state-detail-summary">Select a state on the map to view anonymized survey responses in slideshow form.</div>
+                            </div>
+                            <div class="map-overlay-filter">
+                                <label for="state-filter">Filter:</label>
+                                <select id="state-filter">
+                                    <option>All</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="slick-slider">
+                            <div class="slick-list">
+                                <div id="state-detail-slides" class="slick-track"></div>
+                            </div>
+                            <button id="prev-story" class="slick-prev slide-button" type="button" aria-label="Previous story">❮</button>
+                            <button id="next-story" class="slick-next slide-button" type="button" aria-label="Next story">❯</button>
+                        </div>
+                        <div id="state-detail-dots" class="slick-dots" aria-label="Story navigation"></div>
+                        <div id="state-slide-count">0 / 0</div>
+                    </div>
                 </div>
             </div>
         </main>
