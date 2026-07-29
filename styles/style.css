@@ -68,7 +68,7 @@ body.modal-open{
 }
 
 .landing-sun-wrap img{
-    max-width: 300px;
+    max-width: 100px;
 }
 
 .landing-sun{
@@ -415,8 +415,7 @@ nav a:hover, nav a:focus{background:rgba(46,122,82,0.06)}
 .slick-track{display:flex;height:100%;transition:transform .45s ease;will-change:transform;}
 .slick-slide{min-width:100%;box-sizing:border-box;height:100%;padding:1rem 3rem;display:flex;}
 .slick-slide .slide-card{
-    position:relative;
-    flex:1;min-height:0;margin:0;border-radius:14px;border:1px solid rgba(0,87,217,0.14);box-shadow:0 10px 28px rgba(0,0,0,0.04);padding:2.9rem 1rem 1rem;display:flex;flex-direction:column;gap:.75rem;
+    flex:1;min-height:0;margin:0;border-radius:14px;border:1px solid rgba(0,87,217,0.14);box-shadow:0 10px 28px rgba(0,0,0,0.04);padding:1rem;display:flex;flex-direction:column;gap:.75rem;
     overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;
     scrollbar-width:auto;scrollbar-color:rgba(0,87,217,0.55) rgba(0,87,217,0.08);
     /* Scroll-shadow cue (no JS needed): a soft shadow fades in at the top
@@ -432,96 +431,6 @@ nav a:hover, nav a:focus{background:rgba(46,122,82,0.06)}
     background-size:100% 24px, 100% 24px, 100% 14px, 100% 14px;
     background-attachment:local, local, scroll, scroll;
 }
-.story-fullscreen-btn{
-    position:absolute;
-    top:.72rem;
-    right:1.05rem;
-    width:1.9rem;
-    height:1.9rem;
-    border:1px solid rgba(0,87,217,0.28);
-    border-radius:50%;
-    background:#fff;
-    color:var(--primary);
-    line-height:1;
-    padding:0;
-    cursor:pointer;
-    z-index:2;
-    box-shadow:0 2px 8px rgba(13,27,42,0.08);
-    transition:background .16s ease, box-shadow .16s ease, transform .16s ease;
-}
-.fullscreen-icon{
-    position:relative;
-    display:block;
-    width:0.78rem;
-    height:0.78rem;
-    margin:0 auto;
-}
-.fullscreen-icon::before,
-.fullscreen-icon::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    border:2px solid var(--primary);
-    border-radius:2px;
-}
-.fullscreen-icon::before{
-    clip-path:polygon(0 0, 44% 0, 44% 14%, 14% 14%, 14% 44%, 0 44%);
-}
-.fullscreen-icon::after{
-    clip-path:polygon(56% 86%, 86% 86%, 86% 56%, 100% 56%, 100% 100%, 56% 100%);
-}
-.story-fullscreen-btn:hover,.story-fullscreen-btn:focus-visible{
-    background:rgba(0,87,217,0.08);
-    box-shadow:0 3px 10px rgba(13,27,42,0.14);
-    transform:translateY(-1px);
-}
-#story-fullscreen-modal{
-    position:fixed;
-    inset:0;
-    z-index:1301;
-    display:grid;
-    place-items:center;
-    padding:2.5vh 2.5vw;
-}
-#story-fullscreen-backdrop{
-    position:fixed;
-    inset:0;
-    z-index:1300;
-    background:rgba(7,18,36,0.52);
-    backdrop-filter:blur(2px);
-}
-#story-fullscreen-content{
-    width:min(980px, 95vw);
-    height:min(92vh, 900px);
-    display:flex;
-}
-#story-fullscreen-content .story-reader-card{
-    width:100%;
-    height:100%;
-    padding-top:1.05rem;
-    border-radius:16px;
-    box-shadow:0 24px 58px rgba(0,0,0,0.35);
-    background-color:#f5f8ff;
-}
-#story-fullscreen-close{
-    position:absolute;
-    top:max(12px, 2.6vh);
-    right:max(12px, 2.6vw);
-    width:38px;
-    height:38px;
-    border:none;
-    border-radius:50%;
-    background:rgba(13,27,42,0.75);
-    color:#fff;
-    font-size:1.15rem;
-    line-height:1;
-    cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,0.25);
-}
-#story-fullscreen-close:hover,#story-fullscreen-close:focus-visible{
-    background:rgba(13,27,42,0.9);
-}
-body.story-fullscreen-open{overflow:hidden;}
 .slick-slide .slide-card::-webkit-scrollbar{width:12px;}
 .slick-slide .slide-card::-webkit-scrollbar-track{background:rgba(0,87,217,0.08);border-radius:8px;}
 .slick-slide .slide-card::-webkit-scrollbar-thumb{background:rgba(0,87,217,0.55);border-radius:8px;border:3px solid #f5f8ff;background-clip:padding-box;}
@@ -603,6 +512,65 @@ body.story-fullscreen-open{overflow:hidden;}
 .map-overlay.is-aggregate-view .metric-value{font-size:1.4rem;}
 .why-section{background:rgba(0,87,217,0.06);border:1px solid rgba(0,87,217,0.16);border-radius:10px;padding:.62rem .68rem;}
 .why-text{font-size:.9rem;font-weight:500;line-height:1.6;color:#10213f;}
+.read-more-btn{
+    margin-top:.55rem;
+    border:1px solid rgba(0,87,217,0.3);
+    border-radius:999px;
+    background:#fff;
+    color:var(--primary);
+    font-size:.78rem;
+    font-weight:700;
+    letter-spacing:.01em;
+    padding:.34rem .66rem;
+    cursor:pointer;
+    align-self:flex-start;
+}
+.read-more-btn:hover,.read-more-btn:focus-visible{
+    background:rgba(0,87,217,0.08);
+}
+
+#readmore-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:1400;
+    background:rgba(7,18,36,0.52);
+    backdrop-filter:blur(2px);
+}
+#readmore-modal{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:min(720px, 92vw);
+    max-height:88vh;
+    overflow:auto;
+    z-index:1401;
+    background:#f5f8ff;
+    border:1px solid rgba(0,87,217,0.18);
+    border-radius:14px;
+    box-shadow:0 24px 56px rgba(0,0,0,0.35);
+    padding:1rem 1rem 1.05rem;
+}
+#readmore-close{
+    position:absolute;
+    top:.55rem;
+    right:.55rem;
+    width:34px;
+    height:34px;
+    border:none;
+    border-radius:50%;
+    background:rgba(13,27,42,0.74);
+    color:#fff;
+    font-size:1.1rem;
+    line-height:1;
+    cursor:pointer;
+}
+#readmore-close:hover,#readmore-close:focus-visible{background:rgba(13,27,42,0.92);}
+#readmore-title{margin:0 0 .35rem;color:var(--primary);font-size:1.1rem;padding-right:2.2rem;}
+#readmore-meta{margin:0 0 .7rem;font-size:.88rem;line-height:1.45;color:#22406a;}
+#readmore-body p{margin:0;white-space:pre-wrap;overflow-wrap:break-word;line-height:1.68;color:#10213f;}
+body.readmore-open{overflow:hidden;}
+
 .slide-note{margin:.25rem 0 0;color:#4d5761;font-size:.9rem;}
 .slick-slide strong{display:block;font-size:1rem;margin-bottom:0.65rem;color:var(--primary);}
 .slick-slide p{margin:.55rem 0;font-size:.95rem;line-height:1.65;color:var(--text);}
@@ -725,7 +693,6 @@ body.story-fullscreen-open{overflow:hidden;}
 @media (max-width:640px){
     .metric-grid{grid-template-columns:1fr;}
     .slick-slide{padding:0.9rem 2.2rem;}
-    #story-fullscreen-content{width:min(98vw, 700px);height:min(94vh, 900px);}
     .map-overlay{width:calc(100% - 16px);left:8px;right:8px;top:auto;bottom:8px;height:52%;max-height:52%;}
     #map{min-height:420px;}
     .landing-card{
