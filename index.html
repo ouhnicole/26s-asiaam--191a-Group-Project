@@ -16,13 +16,61 @@
 
     <body>
         <header>
-            Mapping the Experience of UCLA Pilipinx Students
+            <div class="header-row">
+                <div class="site-title">Beyond Immigration: Mapping the <span class="emph">ICE</span> Experiences of UCLA Pilipinx Students</div>
+                <nav><a href="background.html">About</a></nav>
+            </div>
         </header>
 
         <main>
-            <aside class="sidebar">
-                <div class="sidebar-image-card">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Royce_Hall_edit.jpg/330px-Royce_Hall_edit.jpg" alt="UCLA Royce Hall" />
+            <div class="portfolio">
+                <div class="card hero-card">
+                    <h1>Beyond Immigration</h1>
+                    <p>Mapping the ICE experiences of UCLA Pilipinx students through anonymous stories and community-centered data. We prioritize safety, representation, and respectful design.</p>
+                </div>
+                <div id="contents">
+                    <div class="card mission-card">
+                        <h2>Our Mission</h2>
+                        <p>Center UCLA Pilipinx students' stories. We prioritize anonymity, community control, and accessible design so people can safely share experiences.</p>
+                        <h3>User Stories</h3>
+                        <p><strong>Student:</strong> I want to share anonymously and see other students' stories so I feel less isolated and find mutual support.</p>
+                        <p><strong>Family member:</strong> I want the platform to highlight resources and community responses so organizations can better support students.</p>
+                    </div>
+                    <div class="card resources-card">
+                        <h3>Resources & Privacy</h3>
+                        <p>If you feel distressed, contact UCLA Counseling & Psychological Services or call the UCLA CAPS hotline.</p>
+                        <p>Share only what you're comfortable with. Responses are public and anonymized — avoid including names or precise addresses.</p>
+                        <p><a href="https://www.counseling.ucla.edu/" target="_blank" rel="noopener">UCLA Counseling</a> • <a href="https://samahang.ucsd.edu/" target="_blank" rel="noopener">Samahang Pilipino</a></p>
+                    </div>
+                    <div class="card community-card" aria-label="Pilipinx community note">
+                        <div class="icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
+                                <circle cx="12" cy="12" r="3.5" style="fill:var(--accent)" />
+                                <g style="stroke:var(--secondary)" stroke-width="1.2" stroke-linecap="round">
+                                    <path d="M12 2.5v2" />
+                                    <path d="M12 19.5v2" />
+                                    <path d="M4.5 5.5l1.4 1.4" />
+                                    <path d="M18.1 17.1l1.4 1.4" />
+                                    <path d="M2.5 12h2" />
+                                    <path d="M19.5 12h2" />
+                                    <path d="M4.5 18.5l1.4-1.4" />
+                                    <path d="M18.1 6.9l1.4-1.4" />
+                                </g>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3>Mabuhay</h3>
+                            <p class="notes">We center Pilipinx experiences. If you'd like to review or contribute, contact Samahang Pilipino to collaborate.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="state-summary" class="card" style="max-width:980px;margin:0 auto;padding:1rem;">
+                    <h2>Survey summary</h2>
+                    <p>Loading anonymized state-level survey results for the map.</p>
+                </div>
+                <div class="survey-controls">
+                    <button id="survey-toggle" class="survey-toggle" type="button" aria-expanded="false">Share Your Story (optional)</button>
+                    <div class="survey-note">Sharing is optional and anonymous — stories will be displayed without personal identifiers.</div>
                 </div>
                 <section class="sidebar-section about-card">
                     <div class="section-header">
@@ -61,25 +109,28 @@
                         <div id="survey-holder" class="survey-holder"></div>
                     </div>
                 </div>
+                <div class="card map-card">
+                    <h2>Explore the map</h2>
+                    <div id="map"></div>
+                </div>
             </div>
         </main>
         <div id="footer">
             Copyright(2026)
         </div>
-        <script src="intl.js"></script>
+        <script src="js/init_cathy.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.info-button').forEach((button) => {
-                    button.addEventListener('click', function () {
-                        const section = button.closest('.sidebar-section');
-                        const content = section.querySelector('.sidebar-content');
-                        if (content) {
-                            content.classList.toggle('open');
-                            button.textContent = content.classList.contains('open') ? 'Hide' : 'Info';
-                        }
-                    });
+            // Survey toggle: optional, respects anonymity
+            (function(){
+                const btn = document.getElementById('survey-toggle');
+                const panel = document.getElementById('survey-panel');
+                if (!btn || !panel) return;
+                btn.addEventListener('click', function(){
+                    const isOpen = panel.style.display === 'block';
+                    panel.style.display = isOpen ? 'none' : 'block';
+                    btn.setAttribute('aria-expanded', String(!isOpen));
                 });
-            });
+            })();
         </script>
     </body>
 </html>
