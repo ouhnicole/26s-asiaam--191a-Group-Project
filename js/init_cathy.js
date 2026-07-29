@@ -21,12 +21,93 @@ map.on('load', async function() {
         const response = await fetch(statesGeojsonUrl);
         statesGeojson = await response.json();
         addStateLayers(statesGeojson);
+        setupCityMarkerLayer();
         await loadSurveyData();
-        addLegend();
+        // addLegend();
     } catch (error) {
         console.error('Error loading map data:', error);
     }
 });
+
+// Animated pulsing dot used to mark the city of the story currently shown
+// in the slideshow. Adapted from the MapLibre "animated icon" example:
+// https://maplibre.org/maplibre-gl-js/docs/examples/add-an-animated-icon-to-the-map/
+const pulsingDot = {
+    width: 100,
+    height: 100,
+    data: new Uint8Array(100 * 100 * 4),
+
+    onAdd: function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.width;
+        canvas.height = this.height;
+        this.context = canvas.getContext('2d');
+    },
+
+    render: function () {
+        const duration = 1000;
+        const t = (performance.now() % duration) / duration;
+
+        const radius = (this.width / 2) * 0.3;
+        const outerRadius = (this.width / 2) * 0.7 * t + radius;
+        const context = this.context;
+
+        context.clearRect(0, 0, this.width, this.height);
+        context.beginPath();
+        context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
+        context.fillStyle = `rgba(254, 203, 0, ${1 - t})`;
+        context.fill();
+
+        context.beginPath();
+        context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
+        context.fillStyle = '#0056d8';
+        context.strokeStyle = 'white';
+        context.lineWidth = 2 + 4 * (1 - t);
+        context.fill();
+        context.stroke();
+
+        this.data = context.getImageData(0, 0, this.width, this.height).data;
+
+        map.triggerRepaint();
+
+        return true;
+    }
+};
+
+function setupCityMarkerLayer() {
+    map.addImage('pulsing-dot', pulsingDot, {pixelRatio: 2});
+    map.addSource('city-marker', {
+        type: 'geojson',
+        data: {type: 'FeatureCollection', features: []}
+    });
+    map.addLayer({
+        id: 'city-marker-layer',
+        type: 'symbol',
+        source: 'city-marker',
+        layout: {
+            'icon-image': 'pulsing-dot',
+            'icon-allow-overlap': true
+        }
+    });
+}
+
+function updateCityMarker(entry) {
+    const source = map.getSource('city-marker');
+    if (!source) return;
+    if (!entry || !isFinite(entry.longitude) || !isFinite(entry.latitude)) {
+        source.setData({type: 'FeatureCollection', features: []});
+        return;
+    }
+    source.setData({
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: {type: 'Point', coordinates: [entry.longitude, entry.latitude]},
+            properties: {title: entry.title || ''}
+        }]
+    });
+    map.panTo([entry.longitude, entry.latitude], {duration: 800});
+}
 
 function normalizeState(location) {
     if (!location || typeof location !== 'string') return 'Unknown';
@@ -38,6 +119,41 @@ function normalizeState(location) {
     const matching = Object.values(STATE_NAME_MAP).find(name => name.toUpperCase() === upper);
     if (matching) return matching;
     return 'Unknown';
+}
+
+function normalizeKey(key) {
+    return String(key || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+}
+
+function getFieldValue(row, preferredKeys, fallbackPattern) {
+    if (!row) return '';
+
+    for (const key of preferredKeys) {
+        const value = row[key];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+            return String(value).trim();
+        }
+    }
+
+    if (!fallbackPattern) return '';
+    for (const [key, value] of Object.entries(row)) {
+        if (!fallbackPattern.test(normalizeKey(key))) continue;
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+            return String(value).trim();
+        }
+    }
+    return '';
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function pointInPolygon(point, polygon) {
@@ -117,8 +233,10 @@ function addStateLayers(geojson) {
         const no = props.no || 0;
         const count = props.count || 0;
         const cat = props.category || 'No responses';
-        const html = `<strong>${props.name}</strong><div style="font-size:13px;margin-top:4px;">${count} response${count===1?'':'s'} — Yes: ${yes} • No: ${no}<div style="margin-top:6px;font-weight:600;">${cat}</div></div>`;
-        hoverPopup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+        if (count > 0) {
+            const html = `<strong>${props.name}</strong><div style="font-size:13px;margin-top:4px;">${count} response${count===1?'':'s'} — Yes: ${yes} • No: ${no}<div style="margin-top:6px;font-weight:600;">${cat}</div></div>`;
+            hoverPopup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+        }
     });
     map.on('mouseleave', 'states-fill', () => {
         map.getCanvas().style.cursor = '';
@@ -127,12 +245,42 @@ function addStateLayers(geojson) {
     });
     map.on('click', 'states-fill', (e) => {
         const stateName = e.features[0].properties.name;
-        if (stateGroups[stateName]) {
+        const group = stateGroups[stateName];
+        if (group && group.entries.length > 0) {
             map.setFilter('states-highlight', ['==', 'name', stateName]);
-            const info = createInfoPanel();
-            showStateDetails(stateName, stateGroups[stateName], info);
+            showStateDetails(stateName, group, createInfoPanel());
+        } else {
+            // No survey data for this state — fall back to the overall summary.
+            map.setFilter('states-highlight', ['==', 'name', '']);
+            showStateDetails('All responses', getAggregateGroup(), createInfoPanel());
         }
     });
+
+    map.on('click', (e) => {
+        const features = map.queryRenderedFeatures(e.point, {layers: ['states-fill', 'states-outline']});
+        if (!features.length) {
+            // Clicked somewhere with no survey data at all — show the overall summary.
+            map.setFilter('states-highlight', ['==', 'name', '']);
+            showStateDetails('All responses', getAggregateGroup(), createInfoPanel());
+        }
+    });
+}
+
+// Combines every state's responses into one group so clicks on empty states
+// or areas without survey data can still show the overall Yes/No summary.
+function getAggregateGroup() {
+    const entries = [];
+    let yes = 0, no = 0;
+    let statesWithResponses = 0;
+    Object.entries(stateGroups).forEach(([stateName, group]) => {
+        entries.push(...group.entries);
+        yes += group.yes;
+        no += group.no;
+        // 'Unknown' isn't an actual state, so it doesn't count toward the
+        // "how many states have a response" tally.
+        if (stateName !== 'Unknown' && group.entries.length > 0) statesWithResponses += 1;
+    });
+    return {entries, yes, no, statesWithResponses};
 }
 
 function addLegend() {
@@ -165,88 +313,160 @@ function createInfoPanel(){
     return document.getElementById('state-detail-overlay');
 }
 
-function showSurveySummary(){
-    const overlay = document.getElementById('state-detail-overlay');
-    const title = document.getElementById('state-detail-title');
-    const summary = document.getElementById('state-detail-summary');
-    const filterSelect = document.getElementById('state-filter');
-    const slidesContainer = document.getElementById('state-detail-slides');
-    const dotsContainer = document.getElementById('state-detail-dots');
-    const countLabel = document.getElementById('state-slide-count');
-    const prevButton = document.getElementById('prev-story');
-    const nextButton = document.getElementById('next-story');
-
-    if (!overlay || !slidesContainer || !title || !summary || !filterSelect || !countLabel) return;
-    overlay.hidden = false;
-    overlay.classList.add('open');
-
-    const totalStates = Object.keys(stateGroups).length;
-    const totalResponses = Object.values(stateGroups).reduce((sum, group) => sum + group.entries.length, 0);
-    const yesCount = Object.values(stateGroups).reduce((sum, group) => sum + group.yes, 0);
-    const noCount = Object.values(stateGroups).reduce((sum, group) => sum + group.no, 0);
-
-    const yesPercent = totalResponses ? Math.round((yesCount / totalResponses) * 100) : 0;
-    const noPercent = totalResponses ? Math.round((noCount / totalResponses) * 100) : 0;
-
-    title.textContent = 'Survey summary';
-    summary.textContent = `${totalResponses} survey responses came from ${totalStates} states. ${yesCount} answered “Yes” (${yesPercent}%) and ${noCount} answered “No” (${noPercent}%).`;
-    filterSelect.innerHTML = '<option>All</option>';
-    filterSelect.disabled = true;
-
-    slidesContainer.innerHTML = `
-        <div class="slick-slide">
-            <div class="slide-card">
-                <strong>Survey overview</strong>
-                <p><strong>States with responses:</strong> ${totalStates}</p>
-                <p><strong>Total survey responses:</strong> ${totalResponses}</p>
-                <p><strong>Answered “Yes”:</strong> ${yesCount} (${yesPercent}%)</p>
-                <p><strong>Answered “No”:</strong> ${noCount} (${noPercent}%)</p>
-                <p style="margin-top:1rem;color:#555;">Click a state on the map to view that state&apos;s responses.</p>
+// Builds the summary shown when a state with no survey data (or empty map
+// space) is clicked: a single stacked bar chart comparing Yes vs. No
+// responses, plus how many total responses and states are represented.
+// A stacked bar is used instead of a table of numbers because it lets you
+// see the Yes/No balance for the whole dataset in one glance, without
+// having to read and compare separate figures.
+function buildAggregateSummaryHtml(group, total){
+    const statesWithResponses = group.statesWithResponses || 0;
+    const yesPct = total > 0 ? Math.round((group.yes / total) * 100) : 0;
+    const noPct = total > 0 ? 100 - yesPct : 0;
+    return `
+        <div class="summary-question-card" style="width: 100%;">
+            <span class="summary-question-icon" aria-hidden="true">&#10077;</span>
+            <div>
+                <span class="summary-question-label">Survey question</span>
+                <p class="summary-question-text">Has UCLA supported Pilipinx students affected by ICE deportations?</p>
             </div>
-        </div>`;
-    dotsContainer.innerHTML = '';
-    countLabel.textContent = 'Summary';
-    if (prevButton) prevButton.disabled = true;
-    if (nextButton) nextButton.disabled = true;
+        </div>
+        <div class="summary-chart summary-chart-full" role="img" aria-label="${group.yes} yes responses (${yesPct}%) and ${group.no} no responses (${noPct}%) out of ${total} total">
+            <div class="chart-bar">
+                <span class="chart-segment yes" style="width:${yesPct}%"></span>
+                <span class="chart-segment no" style="width:${noPct}%"></span>
+            </div>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot yes"></span>Yes — ${group.yes} (${yesPct}%)</span>
+                <span class="legend-item"><span class="legend-dot no"></span>No — ${group.no} (${noPct}%)</span>
+            </div>
+        </div>
+        <div class="metric-grid summary-metric-grid">
+            <div class="metric-card metric-total">
+                <span class="metric-label">Total responses</span>
+                <span class="metric-value">${total}</span>
+            </div>
+            <div class="metric-card metric-states">
+                <span class="metric-label">States represented</span>
+                <span class="metric-value">${statesWithResponses}</span>
+            </div>
+        </div>
+        <div class="instructions-card">
+            <h3>How to explore the map</h3>
+            <ul>
+                <li><strong>Click any state on the map</strong> to view anonymized stories from that community.</li>
+                <li><strong>Use the filter</strong> to see responses by who was affected (parent, sibling, partner, friend, etc.).</li>
+                <li><strong>Navigate stories</strong> with the arrow buttons on the sides of each story.</li>
+                <li><strong>Click outside a state</strong> to return to this overview.</li>
+            </ul>
+        </div>
+    `;
 }
 
-function renderStateSummary(groups){
-    const summaryPanel = document.getElementById('state-summary');
-    summaryPanel.innerHTML = '<h2>Survey summary</h2><div id="summary-cards" class="summary-cards"></div>';
-    const cardsContainer = document.getElementById('summary-cards');
-    Object.entries(groups)
-        .sort(([,a],[,b]) => b.entries.length - a.entries.length)
-        .forEach(([state, group]) => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.style.cursor = 'pointer';
-            card.style.minWidth = '220px';
-            card.style.display = 'flex';
-            card.style.flexDirection = 'column';
-            card.style.gap = '6px';
-            const total = (group.yes || 0) + (group.no || 0);
-            let category = 'No responses';
-            if (total > 0) {
-                if (group.yes === total) category = 'All Yes';
-                else if (group.no === total) category = 'All No';
-                else category = 'Mixed';
-            }
-            card.innerHTML = `
-                <strong>${state}</strong>
-                <small>${group.entries.length} response${group.entries.length === 1 ? '' : 's'}</small>
-                <small>${category}</small>
-            `;
-            card.addEventListener('click', function(){
-                highlightState(state);
-            });
-            cardsContainer.appendChild(card);
-        });
+// Closes the state/survey panel so it collapses back into the map with no
+// state selected. The panel slides out first, then is fully hidden once the
+// transition finishes so it doesn't affect the map's layout while closing.
+function closeOverlay(){
+    const overlay = document.getElementById('state-detail-overlay');
+    if (!overlay || overlay.hidden) return;
+    closeStoryFullscreen();
+    map.setFilter('states-highlight', ['==', 'name', '']);
+    updateCityMarker(null);
+    overlay.classList.remove('open');
+    overlay.classList.remove('is-aggregate-view');
+    window.setTimeout(() => {
+        if (!overlay.classList.contains('open')) overlay.hidden = true;
+    }, 280);
+}
+
+function getStoryFullscreenElements() {
+    let backdrop = document.getElementById('story-fullscreen-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'story-fullscreen-backdrop';
+        backdrop.hidden = true;
+        document.body.appendChild(backdrop);
+    }
+
+    let modal = document.getElementById('story-fullscreen-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'story-fullscreen-modal';
+        modal.hidden = true;
+        modal.innerHTML = `
+            <button id="story-fullscreen-close" type="button" aria-label="Close full screen story view">&times;</button>
+            <div id="story-fullscreen-content"></div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    const closeBtn = modal.querySelector('#story-fullscreen-close');
+    const content = modal.querySelector('#story-fullscreen-content');
+
+    if (!backdrop.dataset.bound) {
+        backdrop.addEventListener('click', closeStoryFullscreen);
+        backdrop.dataset.bound = 'true';
+    }
+    if (closeBtn && !closeBtn.dataset.bound) {
+        closeBtn.addEventListener('click', closeStoryFullscreen);
+        closeBtn.dataset.bound = 'true';
+    }
+
+    return { backdrop, modal, closeBtn, content };
+}
+
+function closeStoryFullscreen() {
+    const { backdrop, modal, content } = getStoryFullscreenElements();
+    if (content) content.innerHTML = '';
+    if (backdrop) backdrop.hidden = true;
+    if (modal) modal.hidden = true;
+    document.querySelectorAll('.story-fullscreen-btn').forEach((btn) => {
+        btn.setAttribute('aria-expanded', 'false');
+    });
+    document.body.classList.remove('story-fullscreen-open');
+}
+
+function openStoryFullscreen(card, button) {
+    if (!card) return;
+    const { backdrop, modal, content, closeBtn } = getStoryFullscreenElements();
+    closeStoryFullscreen();
+
+    const clonedCard = card.cloneNode(true);
+    const clonedToggle = clonedCard.querySelector('.story-fullscreen-btn');
+    if (clonedToggle) clonedToggle.remove();
+    clonedCard.classList.add('story-reader-card');
+
+    if (content) {
+        content.innerHTML = '';
+        content.appendChild(clonedCard);
+    }
+
+    if (button) button.setAttribute('aria-expanded', 'true');
+    if (backdrop) backdrop.hidden = false;
+    if (modal) modal.hidden = false;
+    document.body.classList.add('story-fullscreen-open');
+    if (closeBtn) closeBtn.focus();
+}
+
+let storyFullscreenEscBound = false;
+function ensureStoryFullscreenEscBinding() {
+    if (storyFullscreenEscBound) return;
+    storyFullscreenEscBound = true;
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && document.body.classList.contains('story-fullscreen-open')) {
+            closeStoryFullscreen();
+        }
+    });
 }
 
 function showStateDetails(state, group, info){
     if (!info) return;
     info.hidden = false;
     info.style.opacity = '1';
+    // The aggregate ('All responses') view is shown when a state without
+    // survey data (or empty map space) is clicked, and gets its own
+    // chart-based summary instead of the single-state Yes/No badges.
+    const isAggregateView = state === 'All responses';
     // build a slide deck for state responses
     const allEntries = group.entries.slice();
     const affectedTypes = Array.from(new Set(allEntries.map(e => (e.affected || 'Unknown').trim()))).sort();
@@ -265,10 +485,23 @@ function showStateDetails(state, group, info){
         return list.map((entry) => `
             <div class="slick-slide">
                 <div class="slide-card">
-                    <strong>${entry.title || 'Unknown location'}</strong>
-                    <p><strong>Who was affected?</strong> ${entry.affected || '—'}</p>
-                    <p><strong>Response</strong> ${entry.opinion || '—'}</p>
-                    <p><strong>Why or why not?</strong> ${entry.testimony || '—'}</p>
+                    <button type="button" class="story-fullscreen-btn" aria-label="Open story in full screen" aria-expanded="false"><span class="fullscreen-icon" aria-hidden="true"></span></button>
+                    <div class="slide-section">
+                        <span class="slide-label">Location</span>
+                        <strong>${escapeHtml(entry.title || 'Unknown location')}</strong>
+                    </div>
+                    <div class="slide-section">
+                        <span class="slide-label">Response</span>
+                        <p>${escapeHtml(entry.opinion || 'No response provided.')}</p>
+                    </div>
+                    <div class="slide-section">
+                        <span class="slide-label">Who was affected?</span>
+                        <p>${escapeHtml(entry.affected || 'No detail provided.')}</p>
+                    </div>
+                    <div class="slide-section why-section">
+                        <span class="slide-label">Why or why not?</span>
+                        <p class="why-text">${escapeHtml(entry.testimony || 'No additional comment.')}</p>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -278,16 +511,12 @@ function showStateDetails(state, group, info){
         return group && Array.isArray(group.entries) && group.entries.length > 0;
     }
 
-    function renderDots(total){
-        return Array.from({length: total}, (_, idx) => `
-            <button type="button" class="slick-dot${idx === index ? ' active' : ''}" data-index="${idx}" aria-label="Go to story ${idx + 1}"></button>
-        `).join('');
-    }
-
     function updatePanel(){
+        ensureStoryFullscreenEscBinding();
         const list = getFiltered();
         const total = list.length;
         if (index >= total) index = Math.max(0, total - 1);
+        updateCityMarker(total > 0 ? list[index] : null);
 
         const overlay = document.getElementById('state-detail-overlay');
         const title = document.getElementById('state-detail-title');
@@ -296,20 +525,55 @@ function showStateDetails(state, group, info){
         const slidesContainer = document.getElementById('state-detail-slides');
         const prevButton = document.getElementById('prev-story');
         const nextButton = document.getElementById('next-story');
-        const countLabel = document.getElementById('state-slide-count');
-        const dotsContainer = document.getElementById('state-detail-dots');
         const closeButton = document.getElementById('close-map-overlay');
 
         if (overlay) {
             overlay.hidden = false;
             overlay.classList.add('open');
+            overlay.classList.toggle('is-aggregate-view', isAggregateView);
         }
-        if (title) title.textContent = state;
-        if (summary) summary.textContent = `${group.entries.length} total response${group.entries.length === 1 ? '' : 's'} — ${group.yes} Yes • ${group.no} No`;
+        if (title) title.textContent = isAggregateView ? 'Overview: All Responses' : state;
+        if (summary) {
+            const total = group.yes + group.no;
+            if (isAggregateView) {
+                summary.innerHTML = buildAggregateSummaryHtml(group, total);
+            } else {
+                const yesPct = total > 0 ? Math.round((group.yes / total) * 100) : 0;
+                const noPct = total > 0 ? 100 - yesPct : 0;
+                summary.innerHTML = `
+                    <div class="summary-question-card" style="width: 100%;">
+                        <span class="summary-question-icon" aria-hidden="true">&#10077;</span>
+                        <div>
+                            <span class="summary-question-label">Survey question</span>
+                            <p class="summary-question-text">Has UCLA supported Pilipinx students affected by ICE deportations?</p>
+                        </div>
+                    </div>
+                    <div class="summary-chart" role="img" aria-label="${group.yes} yes responses (${yesPct}%) and ${group.no} no responses (${noPct}%) out of ${total} total">
+                        <div class="chart-bar">
+                            <span class="chart-segment yes" style="width:${yesPct}%"></span>
+                            <span class="chart-segment no" style="width:${noPct}%"></span>
+                        </div>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-dot yes"></span>Yes — ${group.yes} (${yesPct}%)</span>
+                            <span class="legend-item"><span class="legend-dot no"></span>No — ${group.no} (${noPct}%)</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
         if (slidesContainer) slidesContainer.style.minHeight = '180px';
         if (slidesContainer) slidesContainer.innerHTML = buildSlides(list);
-        if (dotsContainer) dotsContainer.innerHTML = total > 1 ? renderDots(total) : '';
-        if (countLabel) countLabel.textContent = total > 0 ? `Story ${index + 1} of ${total}` : 'No stories available';
+        closeStoryFullscreen();
+
+        if (slidesContainer) {
+            slidesContainer.querySelectorAll('.slide-card').forEach((card) => {
+                const fullscreenBtn = card.querySelector('.story-fullscreen-btn');
+                if (!fullscreenBtn) return;
+                fullscreenBtn.onclick = () => {
+                    openStoryFullscreen(card, fullscreenBtn);
+                };
+            });
+        }
 
         if (prevButton) {
             prevButton.disabled = total <= 1;
@@ -331,18 +595,9 @@ function showStateDetails(state, group, info){
             track.style.transform = `translateX(-${index * 100}%)`;
         }
 
-        if (dotsContainer) {
-            dotsContainer.querySelectorAll('.slick-dot').forEach((button) => {
-                button.onclick = () => {
-                    index = Number(button.dataset.index);
-                    updatePanel();
-                };
-            });
-        }
-
         if (closeButton) {
             closeButton.onclick = () => {
-                if (overlay) overlay.hidden = true;
+                closeOverlay();
             };
         }
     }
@@ -401,10 +656,27 @@ function processData(results){
             return;
         }
 
-        const title = feature["Where's your hometown located? (City, State)"] || feature['Hometown'] || feature['hometown'] || 'Unknown location';
-        const opinion = feature['Do you think UCLA has provided enough resources for students having experienced deportations?'] || feature['Do you think UCLA has provided enough resources?'] || '';
-        const testimony = feature['Why or why not?'] || feature['Why or why not'] || feature['Why or why not? (Please explain)'] || feature['Please explain'] || '';
-        const affected = feature['Who was affected?'] || feature['Who was affected'] || '';
+        const title = getFieldValue(
+            feature,
+            ["Where's your hometown located? (City, State)", 'Hometown', 'hometown'],
+            /(hometown|citystate|location)/
+        ) || 'Unknown location';
+        const opinion = getFieldValue(
+            feature,
+            ['Do you think UCLA has provided enough resources for students having experienced deportations?', 'Do you think UCLA has provided enough resources?', 'Response', 'response'],
+            /(providedenoughresources|enoughresources|resourcesforstudents|deportations)/
+        );
+        const testimony = getFieldValue(
+            feature,
+            ['Why or why not?', 'Why or why not', 'Why or why not? (Please explain)', 'Please explain'],
+            /(whyorwhynot|pleaseexplain|explain|reasonwhy|because)/
+        );
+        const affected = getFieldValue(
+            feature,
+            ['Who was affected?', 'Who was affected'],
+            /(whowasaffected|affected)/
+        );
+        const normalizedOpinion = opinion.toLowerCase().trim();
         let state = normalizeState(title);
         if (state === 'Unknown' && isFinite(latitude) && isFinite(longitude)) {
             const fallbackState = findStateForPoint(longitude, latitude);
@@ -415,8 +687,8 @@ function processData(results){
             stateGroups[state] = {entries: [], yes: 0, no: 0};
         }
         stateGroups[state].entries.push({latitude, longitude, title, opinion, testimony, affected});
-        if (opinion.toLowerCase() === 'yes') stateGroups[state].yes += 1;
-        if (opinion.toLowerCase() === 'no') stateGroups[state].no += 1;
+        if (normalizedOpinion === 'yes') stateGroups[state].yes += 1;
+        if (normalizedOpinion === 'no') stateGroups[state].no += 1;
     });
 
     if (statesGeojson) {
@@ -441,8 +713,6 @@ function processData(results){
         map.getSource('states').setData(updated);
         fitMapToDataBounds(updated);
     }
-    renderStateSummary(stateGroups);
-    showSurveySummary();
 }
 
 function fitMapToDataBounds(geojson) {

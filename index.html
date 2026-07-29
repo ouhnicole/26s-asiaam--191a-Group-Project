@@ -5,33 +5,6 @@
         <meta charset="utf-8" />
         <link rel="shortcut icon" href="#">
         <link rel="stylesheet" href="styles/style.css">
-        <style>
-            .survey-controls {
-                width: 100%;
-                margin-bottom: 1rem;
-                text-align: center;
-            }
-
-            .survey-toggle {
-                padding: 0.6rem 1rem;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 0.95rem;
-            }
-
-            .survey-panel {
-                display: none;
-                width: 100%;
-                margin-top: 0.75rem;
-            }
-
-            .survey-panel iframe {
-                width: 100%;
-                min-height: 540px;
-                border: none;
-            }
-        </style>
 
         <!-- MapLibreGL's css-->
         <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" />
@@ -42,6 +15,25 @@
     </head>
 
     <body>
+        <div id="landing-modal" class="landing-modal" role="dialog" aria-modal="true" aria-labelledby="landing-title" aria-describedby="landing-description">
+            <div class="landing-backdrop" data-close-landing="true"></div>
+            <section class="landing-card">
+                <div class="landing-sun-wrap" aria-hidden="true">
+                    <img src="images/philippine-sun.png" alt="Philippine sun" class="landing-sun-image">
+                </div>
+                <p class="landing-greeting">Mabuhay</p>
+                <h1 id="landing-title">UCLA Pilipinx Student Story Map</h1>
+                <p id="landing-description" class="landing-description">
+                    This map gathers anonymous testimonies from UCLA Samahang Pilipino students whose loved ones — parents, siblings, partners, or close friends — have been detained or deported by ICE. Each story traces how that experience reshaped their emotional well-being, finances, education, and sense of belonging, making visible impacts that reach far beyond the person directly detained.
+                </p>
+                <p class="landing-tip">Select a state on the map to read the testimonies rooted there. Ready to move on? Click outside this card, press Esc, or use the button below.</p>
+                <div class="landing-actions">
+                    <button id="enter-map" class="enter-map-btn" type="button">See the experiences</button>
+                    <a href="background.html" class="landing-learn-more btn-tertiary">Learn more</a>
+                </div>
+            </section>
+        </div>
+
         <header>
             <div class="header-row">
                 <div class="site-title">Beyond Immigration: Mapping the <span class="emph">ICE</span> Experiences of UCLA Pilipinx Students</div>
@@ -51,83 +43,40 @@
 
         <main>
             <div class="portfolio">
-                <div class="card hero-card">
-                    <h1>Beyond Immigration</h1>
-                    <p>Mapping the ICE experiences of UCLA Pilipinx students through anonymous stories and community-centered data. We prioritize safety, representation, and respectful design.</p>
-                </div>
-                <div id="contents">
-                    <div class="card mission-card">
-                        <h2>Our Mission</h2>
-                        <p>Center UCLA Pilipinx students' stories. We prioritize anonymity, community control, and accessible design so people can safely share experiences.</p>
-                        <h3>User Stories</h3>
-                        <p><strong>Student:</strong> I want to share anonymously and see other students' stories so I feel less isolated and find mutual support.</p>
-                        <p><strong>Family member:</strong> I want the platform to highlight resources and community responses so organizations can better support students.</p>
-                    </div>
-                    <div class="card resources-card">
-                        <h3>Resources & Privacy</h3>
-                        <p>If you feel distressed, contact UCLA Counseling & Psychological Services or call the UCLA CAPS hotline.</p>
-                        <p>Share only what you're comfortable with. Responses are public and anonymized — avoid including names or precise addresses.</p>
-                        <p><a href="https://www.counseling.ucla.edu/" target="_blank" rel="noopener">UCLA Counseling</a> • <a href="https://samahang.ucsd.edu/" target="_blank" rel="noopener">Samahang Pilipino</a></p>
-                    </div>
-                    <div class="card community-card" aria-label="Pilipinx community note">
-                        <div class="icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
-                                <circle cx="12" cy="12" r="3.5" style="fill:var(--accent)" />
-                                <g style="stroke:var(--secondary)" stroke-width="1.2" stroke-linecap="round">
-                                    <path d="M12 2.5v2" />
-                                    <path d="M12 19.5v2" />
-                                    <path d="M4.5 5.5l1.4 1.4" />
-                                    <path d="M18.1 17.1l1.4 1.4" />
-                                    <path d="M2.5 12h2" />
-                                    <path d="M19.5 12h2" />
-                                    <path d="M4.5 18.5l1.4-1.4" />
-                                    <path d="M18.1 6.9l1.4-1.4" />
-                                </g>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3>Mabuhay</h3>
-                            <p class="notes">We center Pilipinx experiences. If you'd like to review or contribute, contact Samahang Pilipino to collaborate.</p>
-                        </div>
-                    </div>
-                </div>
-                <div id="state-summary" class="card" style="max-width:980px;margin:0 auto;padding:1rem;">
-                    <h2>Survey summary</h2>
-                    <p>Loading anonymized state-level survey results for the map.</p>
-                </div>
-                <div class="survey-controls">
-                    <button id="survey-toggle" class="survey-toggle" type="button" aria-expanded="false">Share Your Story (optional)</button>
-                    <div class="survey-note">Sharing is optional and anonymous — stories will be displayed without personal identifiers.</div>
-                </div>
-                <div id="survey-panel" class="survey-panel">
-                    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScaFLlkRnyKGnaQxl3_EysLghpz6ydfYeeQfF9LGE_hYdlZbA/viewform?embedded=true" title="Survey Form">Loading…</iframe>
-                </div>
                 <div class="card map-card">
-                    <h2>Explore the map</h2>
-                    <div id="map"></div>
-                    <div id="state-detail-overlay" class="map-overlay" hidden aria-live="polite">
-                        <button id="close-map-overlay" class="map-overlay-close" type="button" aria-label="Close story viewer">×</button>
-                        <div id="state-detail-header" class="map-overlay-header">
-                            <div>
+                    <div class="map-card-header">
+                        <h2>Explore the map</h2>
+                        <button id="map-help-btn" class="help-icon-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="map-help-popover" aria-label="How to use this map">?</button>
+                        <div id="map-help-popover" class="help-popover" role="dialog" aria-label="How to use this map" hidden>
+                            <h3>How to use this map</h3>
+                            <ul class="landing-keypoints">
+                                <li>Select a state on the map to read anonymized stories shared by students connected to that community.</li>
+                                <li>Every color reflects answers to the survey question "Do you think UCLA has provided enough resources for students having experienced deportations?" — green for "All Yes," red for "All No," gold for "Mixed."</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="map-viewport">
+                        <div id="map" tabindex="-1"></div>
+                        <div id="state-detail-overlay" class="map-overlay" hidden aria-live="polite">
+                            <button id="close-map-overlay" class="map-overlay-close" type="button" aria-label="Close story viewer">×</button>
+                            <div id="state-detail-header" class="map-overlay-header">
                                 <h2 id="state-detail-title">Select a state</h2>
-                                <div id="state-detail-summary">Select a state on the map to view anonymized survey responses in slideshow form.</div>
+                                <div class="map-overlay-filter">
+                                    <label for="state-filter">Filter:</label>
+                                    <select id="state-filter">
+                                        <option>All</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="map-overlay-filter">
-                                <label for="state-filter">Filter:</label>
-                                <select id="state-filter">
-                                    <option>All</option>
-                                </select>
+                            <div id="state-detail-summary">Select a state on the map to view anonymized survey responses in slideshow form.<br><span class="state-detail-tip">Click any state to view its anonymized responses in a slideshow. Click outside a highlighted state to close the panel.</span></div>
+                            <div class="slick-slider">
+                                <div class="slick-list">
+                                    <div id="state-detail-slides" class="slick-track"></div>
+                                </div>
+                                <button id="prev-story" class="slick-prev slide-button" type="button" aria-label="Previous story">❮</button>
+                                <button id="next-story" class="slick-next slide-button" type="button" aria-label="Next story">❯</button>
                             </div>
                         </div>
-                        <div class="slick-slider">
-                            <div class="slick-list">
-                                <div id="state-detail-slides" class="slick-track"></div>
-                            </div>
-                            <button id="prev-story" class="slick-prev slide-button" type="button" aria-label="Previous story">❮</button>
-                            <button id="next-story" class="slick-next slide-button" type="button" aria-label="Next story">❯</button>
-                        </div>
-                        <div id="state-detail-dots" class="slick-dots" aria-label="Story navigation"></div>
-                        <div id="state-slide-count">0 / 0</div>
                     </div>
                 </div>
             </div>
@@ -137,15 +86,72 @@
         </div>
         <script src="js/init_cathy.js"></script>
         <script>
-            // Survey toggle: optional, respects anonymity
+            // Help popover: "How to use this map" next to the map header.
             (function(){
-                const btn = document.getElementById('survey-toggle');
-                const panel = document.getElementById('survey-panel');
-                if (!btn || !panel) return;
-                btn.addEventListener('click', function(){
-                    const isOpen = panel.style.display === 'block';
-                    panel.style.display = isOpen ? 'none' : 'block';
-                    btn.setAttribute('aria-expanded', String(!isOpen));
+                const btn = document.getElementById('map-help-btn');
+                const popover = document.getElementById('map-help-popover');
+                if (!btn || !popover) return;
+
+                function closePopover() {
+                    popover.hidden = true;
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+
+                function openPopover() {
+                    popover.hidden = false;
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+
+                btn.addEventListener('click', function(event){
+                    event.stopPropagation();
+                    if (popover.hidden) {
+                        openPopover();
+                    } else {
+                        closePopover();
+                    }
+                });
+
+                document.addEventListener('click', function(event){
+                    if (!popover.hidden && !popover.contains(event.target) && event.target !== btn) {
+                        closePopover();
+                    }
+                });
+
+                document.addEventListener('keydown', function(event){
+                    if (event.key === 'Escape' && !popover.hidden) {
+                        closePopover();
+                        btn.focus();
+                    }
+                });
+            })();
+
+            // Landing modal shown on first page load; dismiss to access the map.
+            (function(){
+                const modal = document.getElementById('landing-modal');
+                const closeButton = document.getElementById('enter-map');
+                const mapEl = document.getElementById('map');
+                if (!modal || !closeButton) return;
+
+                function closeModal() {
+                    modal.classList.add('is-hidden');
+                    document.body.classList.remove('modal-open');
+                    if (mapEl) mapEl.focus({ preventScroll: false });
+                }
+
+                document.body.classList.add('modal-open');
+
+                closeButton.addEventListener('click', closeModal);
+
+                modal.addEventListener('click', function(event){
+                    if (event.target && event.target.matches('[data-close-landing="true"]')) {
+                        closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', function(event){
+                    if (event.key === 'Escape' && !modal.classList.contains('is-hidden')) {
+                        closeModal();
+                    }
                 });
             })();
         </script>
