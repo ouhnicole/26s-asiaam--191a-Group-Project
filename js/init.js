@@ -77,21 +77,13 @@ function processData(results){
         }
 
     });
-};
-function addMarker(latitude,longitude,title,opinion){
-    let popup_message;
+}
 
-    
-    if (opinion == "Yes"){
-        popup_message = `<h2>Student who thinks UCLA has provided enough resources</h2>`
-    }
-    else{
-        popup_message = `<h2>Student who thinks UCLA has not provided enough resources</h2>`
-    }
+function addMarker(latitude, longitude, title, opinion) {
+    const popup_message = `<h2>${title || ''}</h2><p>${opinion || ''}</p>`;
     new maplibregl.Marker()
         .setLngLat([longitude, latitude])
-        .setPopup(new maplibregl.Popup()
-            .setHTML(popup_message))
-        .addTo(map)
-    createButtons(latitude,longitude,opinion);
+        .setPopup(new maplibregl.Popup().setHTML(popup_message))
+        .addTo(map);
+    createButtons(latitude, longitude, title || 'Location');
 }

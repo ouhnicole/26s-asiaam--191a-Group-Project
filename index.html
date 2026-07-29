@@ -1,37 +1,10 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Beyond Immigration: Mapping the ICE Experiences of UCLA Pilipinx Students</title>
+        <title>Beyond Immigration Enforcement: Mapping the Experience of UCLA Pilipinx Students</title>
         <meta charset="utf-8" />
         <link rel="shortcut icon" href="#">
         <link rel="stylesheet" href="styles/style.css">
-        <style>
-            .survey-controls {
-                width: 100%;
-                margin-bottom: 1rem;
-                text-align: center;
-            }
-
-            .survey-toggle {
-                padding: 0.6rem 1rem;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 0.95rem;
-            }
-
-            .survey-panel {
-                display: none;
-                width: 100%;
-                margin-top: 0.75rem;
-            }
-
-            .survey-panel iframe {
-                width: 100%;
-                min-height: 540px;
-                border: none;
-            }
-        </style>
 
         <!-- MapLibreGL's css-->
         <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" />
@@ -99,8 +72,42 @@
                     <button id="survey-toggle" class="survey-toggle" type="button" aria-expanded="false">Share Your Story (optional)</button>
                     <div class="survey-note">Sharing is optional and anonymous — stories will be displayed without personal identifiers.</div>
                 </div>
-                <div id="survey-panel" class="survey-panel">
-                    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScaFLlkRnyKGnaQxl3_EysLghpz6ydfYeeQfF9LGE_hYdlZbA/viewform?embedded=true" title="Survey Form">Loading…</iframe>
+                <section class="sidebar-section about-card">
+                    <div class="section-header">
+                        <h2>About Us</h2>
+                        <button class="info-button button-pop" type="button">Info</button>
+                    </div>
+                    <div class="sidebar-content">
+                        <p>Our mapping application supports immigrant communities by highlighting how immigration enforcement affects not only those detained or deported, but also their families, friends, and communities. Our primary target community is UCLA Samahang Pilipino students who have experienced the indirect effects of ICE enforcement through a parent, sibling, relative, partner, or close friend. Through anonymous, community-generated testimonies, the application maps the geographic distribution of affected students while documenting the emotional, financial, educational, mental health, relational, and everyday impacts that are often absent from public discourse. By making these stories visible, we aim to validate shared experiences, foster solidarity, and raise awareness of the broader consequences of immigration enforcement.</p>
+                    </div>
+                </section>
+                <section class="sidebar-section map-card">
+                    <div class="section-header">
+                        <h2>Our Map</h2>
+                        <button class="info-button button-pop" type="button">Info</button>
+                    </div>
+                    <div class="sidebar-content">
+                        <p>By organizing community-generated testimonies into an interactive map, our platform aims to amplify lived experiences that are often absent from public discussions of immigration enforcement while helping organizations identify recurring challenges faced by affected communities. We hope our platform will become not only a repository of personal stories but also a resource for advocacy, community outreach, and public education by illustrating how the effects of immigration enforcement extend beyond those who are directly detained or deported. Ultimately, we hope to contribute to a more comprehensive understanding of these far-reaching impacts of immigration enforcement while fostering connection and solidarity among individuals with shared experiences.</p>
+                    </div>
+                </section>
+                <section class="sidebar-section survey-card">
+                    <div class="section-header">
+                        <h2>Take the survey</h2>
+                        <button class="info-button button-pop" type="button">Info</button>
+                    </div>
+                    <div class="sidebar-content">
+                        <p>Throughout development, we hope to seek feedback from members of Samahang Pilipino to ensure the platform continues to reflect the priorities and lived experiences of the communities it serves rather than imposing outside assumptions about their needs. Guidance on user privacy, approaches in collecting personal stories, data collection practices, and consent procedures help encourage participants to comfortably and safely share their experiences.</p>
+                        <a class="survey-link" href="https://docs.google.com/forms/d/e/1FAIpQLScaFLlkRnyKGnaQxl3_EysLghpz6ydfYeeQfF9LGE_hYdlZbA/viewform?usp=header" target="_blank" rel="noreferrer noopener">Survey</a>
+                    </div>
+                </section>
+            </aside>
+            <div id="map">
+                <div id="map-ui">
+                    <div id="legend" class="map-legend"></div>
+                    <div id="info" class="map-info">
+                        <div id="info-summary">Click a state to see details.</div>
+                        <div id="survey-holder" class="survey-holder"></div>
+                    </div>
                 </div>
                 <div class="card map-card">
                     <h2>Explore the map</h2>
