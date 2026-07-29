@@ -354,5 +354,3 @@ function zoomToStatePins(abbr, stateFeature) {
         map.fitBounds(bounds, { padding: 80, duration: 250, maxZoom: 11 });
     }
 }
-
-
