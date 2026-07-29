@@ -369,7 +369,7 @@ function buildAggregateSummaryHtml(group, total){
 function closeOverlay(){
     const overlay = document.getElementById('state-detail-overlay');
     if (!overlay || overlay.hidden) return;
-    closeReadMoreModal();
+    closeStoryFullscreen();
     map.setFilter('states-highlight', ['==', 'name', '']);
     updateCityMarker(null);
     overlay.classList.remove('open');
@@ -379,82 +379,82 @@ function closeOverlay(){
     }, 280);
 }
 
-function getReadMoreModalElements() {
-    let backdrop = document.getElementById('readmore-backdrop');
+function getStoryFullscreenElements() {
+    let backdrop = document.getElementById('story-fullscreen-backdrop');
     if (!backdrop) {
         backdrop = document.createElement('div');
-        backdrop.id = 'readmore-backdrop';
+        backdrop.id = 'story-fullscreen-backdrop';
         backdrop.hidden = true;
         document.body.appendChild(backdrop);
     }
 
-    let modal = document.getElementById('readmore-modal');
+    let modal = document.getElementById('story-fullscreen-modal');
     if (!modal) {
-        modal = document.createElement('section');
-        modal.id = 'readmore-modal';
+        modal = document.createElement('div');
+        modal.id = 'story-fullscreen-modal';
         modal.hidden = true;
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-modal', 'true');
         modal.innerHTML = `
-            <button type="button" id="readmore-close" aria-label="Close expanded testimony">&times;</button>
-            <h3 id="readmore-title">Testimony</h3>
-            <p id="readmore-meta"></p>
-            <div id="readmore-body"></div>
+            <button id="story-fullscreen-close" type="button" aria-label="Close full screen story view">&times;</button>
+            <div id="story-fullscreen-content"></div>
         `;
         document.body.appendChild(modal);
     }
 
+    const closeBtn = modal.querySelector('#story-fullscreen-close');
+    const content = modal.querySelector('#story-fullscreen-content');
+
     if (!backdrop.dataset.bound) {
-        backdrop.addEventListener('click', closeReadMoreModal);
+        backdrop.addEventListener('click', closeStoryFullscreen);
         backdrop.dataset.bound = 'true';
     }
-    const closeBtn = modal.querySelector('#readmore-close');
     if (closeBtn && !closeBtn.dataset.bound) {
-        closeBtn.addEventListener('click', closeReadMoreModal);
+        closeBtn.addEventListener('click', closeStoryFullscreen);
         closeBtn.dataset.bound = 'true';
     }
 
-    return {
-        backdrop,
-        modal,
-        closeBtn,
-        titleEl: modal.querySelector('#readmore-title'),
-        metaEl: modal.querySelector('#readmore-meta'),
-        bodyEl: modal.querySelector('#readmore-body')
-    };
+    return { backdrop, modal, closeBtn, content };
 }
 
-function closeReadMoreModal() {
-    const backdrop = document.getElementById('readmore-backdrop');
-    const modal = document.getElementById('readmore-modal');
+function closeStoryFullscreen() {
+    const { backdrop, modal, content } = getStoryFullscreenElements();
+    if (content) content.innerHTML = '';
     if (backdrop) backdrop.hidden = true;
     if (modal) modal.hidden = true;
-    document.body.classList.remove('readmore-open');
+    document.querySelectorAll('.story-fullscreen-btn').forEach((btn) => {
+        btn.setAttribute('aria-expanded', 'false');
+    });
+    document.body.classList.remove('story-fullscreen-open');
 }
 
-function openReadMoreModal(entry) {
-    const { backdrop, modal, closeBtn, titleEl, metaEl, bodyEl } = getReadMoreModalElements();
-    const location = escapeHtml(entry.title || 'Unknown location');
-    const affected = escapeHtml(entry.affected || 'No detail provided');
-    const testimony = escapeHtml(entry.testimony || 'No additional comment.').replace(/\n/g, '<br>');
+function openStoryFullscreen(card, button) {
+    if (!card) return;
+    const { backdrop, modal, content, closeBtn } = getStoryFullscreenElements();
+    closeStoryFullscreen();
 
-    if (titleEl) titleEl.textContent = 'Expanded testimony';
-    if (metaEl) metaEl.innerHTML = `<strong>Location:</strong> ${location}<br><strong>Who was affected:</strong> ${affected}`;
-    if (bodyEl) bodyEl.innerHTML = `<p>${testimony}</p>`;
+    const clonedCard = card.cloneNode(true);
+    const clonedToggle = clonedCard.querySelector('.story-fullscreen-btn');
+    if (clonedToggle) clonedToggle.remove();
+    clonedCard.classList.add('story-reader-card');
 
-    backdrop.hidden = false;
-    modal.hidden = false;
-    document.body.classList.add('readmore-open');
+    if (content) {
+        content.innerHTML = '';
+        content.appendChild(clonedCard);
+    }
+
+    if (button) button.setAttribute('aria-expanded', 'true');
+    if (backdrop) backdrop.hidden = false;
+    if (modal) modal.hidden = false;
+    document.body.classList.add('story-fullscreen-open');
     if (closeBtn) closeBtn.focus();
 }
 
-let readMoreEscBound = false;
-function ensureReadMoreEscBinding() {
-    if (readMoreEscBound) return;
-    readMoreEscBound = true;
+let storyFullscreenEscBound = false;
+function ensureStoryFullscreenEscBinding() {
+    if (storyFullscreenEscBound) return;
+    storyFullscreenEscBound = true;
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && document.body.classList.contains('readmore-open')) {
-            closeReadMoreModal();
+        if (event.key === 'Escape' && document.body.classList.contains('story-fullscreen-open')) {
+            closeStoryFullscreen();
         }
     });
 }
@@ -482,9 +482,10 @@ function showStateDetails(state, group, info){
         if (list.length === 0) {
             return `<div class="slick-slide"><div class="slide-card"><p>No survey responses are available for this state.</p></div></div>`;
         }
-        return list.map((entry, entryIndex) => `
+        return list.map((entry) => `
             <div class="slick-slide">
                 <div class="slide-card">
+                    <button type="button" class="story-fullscreen-btn" aria-label="Open story in full screen" aria-expanded="false"><span class="fullscreen-icon" aria-hidden="true"></span></button>
                     <div class="slide-section">
                         <span class="slide-label">Location</span>
                         <strong>${escapeHtml(entry.title || 'Unknown location')}</strong>
@@ -500,32 +501,10 @@ function showStateDetails(state, group, info){
                     <div class="slide-section why-section">
                         <span class="slide-label">Why or why not?</span>
                         <p class="why-text">${escapeHtml(entry.testimony || 'No additional comment.')}</p>
-                        <button type="button" class="read-more-btn" data-entry-index="${entryIndex}" hidden>Read more</button>
                     </div>
                 </div>
             </div>
         `).join('');
-    }
-
-    function applyReadMoreClamp(slidesRoot){
-        if (!slidesRoot) return;
-        slidesRoot.querySelectorAll('.why-section').forEach((section) => {
-            const textEl = section.querySelector('.why-text');
-            const buttonEl = section.querySelector('.read-more-btn');
-            if (!textEl || !buttonEl) return;
-
-            textEl.classList.remove('is-clamped');
-            buttonEl.hidden = true;
-
-            const lineHeight = parseFloat(window.getComputedStyle(textEl).lineHeight);
-            if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
-
-            const lineCount = Math.round(textEl.scrollHeight / lineHeight);
-            if (lineCount > 2) {
-                textEl.classList.add('is-clamped');
-                buttonEl.hidden = false;
-            }
-        });
     }
 
     function hasData(){
@@ -533,7 +512,7 @@ function showStateDetails(state, group, info){
     }
 
     function updatePanel(){
-        ensureReadMoreEscBinding();
+        ensureStoryFullscreenEscBinding();
         const list = getFiltered();
         const total = list.length;
         if (index >= total) index = Math.max(0, total - 1);
@@ -584,15 +563,14 @@ function showStateDetails(state, group, info){
         }
         if (slidesContainer) slidesContainer.style.minHeight = '180px';
         if (slidesContainer) slidesContainer.innerHTML = buildSlides(list);
-        applyReadMoreClamp(slidesContainer);
-        closeReadMoreModal();
+        closeStoryFullscreen();
 
         if (slidesContainer) {
-            slidesContainer.querySelectorAll('.read-more-btn').forEach((button) => {
-                button.onclick = () => {
-                    const entryIndex = Number(button.dataset.entryIndex);
-                    if (!Number.isInteger(entryIndex) || !list[entryIndex]) return;
-                    openReadMoreModal(list[entryIndex]);
+            slidesContainer.querySelectorAll('.slide-card').forEach((card) => {
+                const fullscreenBtn = card.querySelector('.story-fullscreen-btn');
+                if (!fullscreenBtn) return;
+                fullscreenBtn.onclick = () => {
+                    openStoryFullscreen(card, fullscreenBtn);
                 };
             });
         }
