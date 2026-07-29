@@ -500,11 +500,32 @@ function showStateDetails(state, group, info){
                     <div class="slide-section why-section">
                         <span class="slide-label">Why or why not?</span>
                         <p class="why-text">${escapeHtml(entry.testimony || 'No additional comment.')}</p>
-                        ${(entry.testimony || '').trim().length > 180 ? `<button type="button" class="read-more-btn" data-entry-index="${entryIndex}">Read more</button>` : ''}
+                        <button type="button" class="read-more-btn" data-entry-index="${entryIndex}" hidden>Read more</button>
                     </div>
                 </div>
             </div>
         `).join('');
+    }
+
+    function applyReadMoreClamp(slidesRoot){
+        if (!slidesRoot) return;
+        slidesRoot.querySelectorAll('.why-section').forEach((section) => {
+            const textEl = section.querySelector('.why-text');
+            const buttonEl = section.querySelector('.read-more-btn');
+            if (!textEl || !buttonEl) return;
+
+            textEl.classList.remove('is-clamped');
+            buttonEl.hidden = true;
+
+            const lineHeight = parseFloat(window.getComputedStyle(textEl).lineHeight);
+            if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+
+            const lineCount = Math.round(textEl.scrollHeight / lineHeight);
+            if (lineCount > 2) {
+                textEl.classList.add('is-clamped');
+                buttonEl.hidden = false;
+            }
+        });
     }
 
     function hasData(){
@@ -563,6 +584,7 @@ function showStateDetails(state, group, info){
         }
         if (slidesContainer) slidesContainer.style.minHeight = '180px';
         if (slidesContainer) slidesContainer.innerHTML = buildSlides(list);
+        applyReadMoreClamp(slidesContainer);
         closeReadMoreModal();
 
         if (slidesContainer) {
