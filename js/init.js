@@ -79,8 +79,11 @@ function processData(results){
     });
 };
 <<<<<<< HEAD
+<<<<<<< HEAD
 function addMarker(latitude,longitude,title,opinion){
 =======
+=======
+>>>>>>> 20c0b10 (messaged)
 /*
   Partner's modified addMarker function (commented out so changes are visible):
 
@@ -101,6 +104,18 @@ function addMarker(data){
             .setHTML(popup_message))
         .addTo(map)
     createButtons(latitude,longitude,opinion);
+}
+
+*/
+
+// Restored addMarker signature expected by processData(feature)
+function addMarker(latitude, longitude, title, message){
+    const popup_message = `<h2>${title || ''}</h2><p>${message || ''}</p>`;
+    new maplibregl.Marker()
+        .setLngLat([longitude, latitude])
+        .setPopup(new maplibregl.Popup().setHTML(popup_message))
+        .addTo(map);
+    createButtons(latitude, longitude, title || 'Location');
 }
 
 */

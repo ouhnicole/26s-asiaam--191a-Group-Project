@@ -2,18 +2,12 @@
 const mapOptions = { centerLngLat: [-98.5795, 39.8283], startingZoomLevel: 3 };
 
 const map = new maplibregl.Map({
-<<<<<<< HEAD
     container: 'map', // container ID
     style: 'https://api.maptiler.com/maps/019f8898-9cac-7f48-9d2a-5166d13bc591/style.json?key=domjvUPbX2qSlWXv88Xn', // Your style URL
     center: mapOptions.centerLngLat, // Starting position [lng, lat]
     zoom: mapOptions.startingZoomLevel // Starting zoom level
-=======
-    container: 'map',
-    style: 'https://api.maptiler.com/maps/streets-v2-light/style.json?key=wsyYBQjqRwKnNsZrtci1',
-    center: mapOptions.centerLngLat,
-    zoom: mapOptions.startingZoomLevel
->>>>>>> 20c0b10 (messaged)
 });
+
 window.appMap = map;
 
 const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSycjDzRSIYoOrKh64s8viGDhLLU_Mgz82rkvO2YoEqqwScfeVXyno8y0Ghryh7GkNuhcmqOyj5jgYf/pub?output=csv';
