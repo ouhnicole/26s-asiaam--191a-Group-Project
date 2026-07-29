@@ -77,52 +77,10 @@ function processData(results){
         }
 
     });
-};
-<<<<<<< HEAD
-<<<<<<< HEAD
-function addMarker(latitude,longitude,title,opinion){
-=======
-=======
->>>>>>> 20c0b10 (messaged)
-/*
-  Partner's modified addMarker function (commented out so changes are visible):
-
-function addMarker(data){
->>>>>>> 20c0b10 (messaged)
-    let popup_message;
-
-    
-    if (opinion == "Yes"){
-        popup_message = `<h2>Student who thinks UCLA has provided enough resources</h2>`
-    }
-    else{
-        popup_message = `<h2>Student who thinks UCLA has not provided enough resources</h2>`
-    }
-    new maplibregl.Marker()
-        .setLngLat([longitude, latitude])
-        .setPopup(new maplibregl.Popup()
-            .setHTML(popup_message))
-        .addTo(map)
-    createButtons(latitude,longitude,opinion);
 }
 
-*/
-
-// Restored addMarker signature expected by processData(feature)
-function addMarker(latitude, longitude, title, message){
-    const popup_message = `<h2>${title || ''}</h2><p>${message || ''}</p>`;
-    new maplibregl.Marker()
-        .setLngLat([longitude, latitude])
-        .setPopup(new maplibregl.Popup().setHTML(popup_message))
-        .addTo(map);
-    createButtons(latitude, longitude, title || 'Location');
-}
-
-*/
-
-// Restored addMarker signature expected by processData(feature)
-function addMarker(latitude, longitude, title, message){
-    const popup_message = `<h2>${title || ''}</h2><p>${message || ''}</p>`;
+function addMarker(latitude, longitude, title, opinion) {
+    const popup_message = `<h2>${title || ''}</h2><p>${opinion || ''}</p>`;
     new maplibregl.Marker()
         .setLngLat([longitude, latitude])
         .setPopup(new maplibregl.Popup().setHTML(popup_message))
